@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         try {
           const response = await ai.models.generateContentStream({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash-preview-09-2025',
             contents: contents,
           });
 
