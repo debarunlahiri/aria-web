@@ -1,17 +1,19 @@
 'use client'
 
 import { useState, KeyboardEvent } from 'react'
+import { Send, X } from 'lucide-react'
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void
-  disabled?: boolean
+  onCancel?: () => void
+  isStreaming?: boolean
 }
 
-export default function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, onCancel, isStreaming }: ChatInputProps) {
   const [message, setMessage] = useState('')
 
   const handleSend = () => {
-    if (message.trim() && !disabled) {
+    if (message.trim()) {
       onSendMessage(message)
       setMessage('')
     }
@@ -25,34 +27,44 @@ export default function ChatInput({ onSendMessage, disabled }: ChatInputProps) {
   }
 
   return (
-    <div className="flex items-end space-x-2">
+    <div className="flex items-end gap-1.5 sm:gap-2">
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyPress={handleKeyPress}
-        placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
-        disabled={disabled}
-        className="flex-1 resize-none border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto"
+        placeholder="Type your message..."
+        className="flex-1 resize-none border border-gray-600 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto"
         rows={1}
         style={{
-          minHeight: '48px',
-          maxHeight: '240px',
-          lineHeight: '24px',
+          minHeight: '44px',
+          maxHeight: '180px',
+          lineHeight: '22px',
         }}
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement
           target.style.height = 'auto'
-          const newHeight = Math.min(target.scrollHeight, 240)
+          const newHeight = Math.min(target.scrollHeight, 180)
           target.style.height = `${newHeight}px`
         }}
       />
       <button
         onClick={handleSend}
-        disabled={disabled || !message.trim()}
-        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        disabled={!message.trim()}
+        className="p-2.5 sm:p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+        aria-label="Send message"
       >
-        Send
+        <Send className="w-5 h-5 sm:w-5 sm:h-5" />
       </button>
+      {isStreaming && onCancel && (
+        <button
+          onClick={onCancel}
+          className="p-2.5 sm:p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors flex items-center justify-center"
+          type="button"
+          aria-label="Cancel request"
+        >
+          <X className="w-5 h-5 sm:w-5 sm:h-5" />
+        </button>
+      )}
     </div>
   )
 }
