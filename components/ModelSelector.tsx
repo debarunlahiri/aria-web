@@ -67,16 +67,16 @@ export default function ModelSelector({ selectedModel, onModelChange }: ModelSel
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full max-w-[280px] sm:max-w-none" ref={dropdownRef}>
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="flex items-center gap-2 bg-zinc-900/80 hover:bg-zinc-900 text-white px-3 py-2 rounded-lg border border-zinc-700/50 hover:border-zinc-600 transition-all duration-200 min-w-[180px] sm:min-w-[220px] shadow-md hover:shadow-lg"
+        className="flex w-full items-center justify-between gap-2 bg-zinc-900/80 hover:bg-zinc-900 text-white px-4 py-3 rounded-2xl border border-zinc-700/50 hover:border-zinc-600 transition-all duration-200 min-w-0 sm:min-w-[220px] shadow-md hover:shadow-lg"
       >
         <div className="flex-1 text-left">
-          <div className="text-[10px] font-medium text-zinc-400 uppercase tracking-wide">{selectedModel.provider}</div>
-          <div className="text-sm font-semibold text-zinc-100 truncate mt-0.5">{selectedModel.name}</div>
+          <div className="text-[11px] font-semibold text-zinc-400 uppercase tracking-[0.14em]">{selectedModel.provider}</div>
+          <div className="text-base font-semibold text-zinc-100 whitespace-normal leading-tight break-words mt-0.5">{selectedModel.name}</div>
         </div>
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
@@ -93,7 +93,7 @@ export default function ModelSelector({ selectedModel, onModelChange }: ModelSel
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute top-full mt-2 w-full sm:w-80 bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl z-50 max-h-[28rem] overflow-y-auto scrollbar-thin"
+            className="absolute left-0 right-0 top-full mt-2 w-full sm:w-80 bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl z-50 max-h-[28rem] overflow-y-auto scrollbar-thin"
           >
           {MODEL_GROUPS.map((group, groupIndex) => (
             <div key={group.provider} className={groupIndex > 0 ? 'border-t border-zinc-800' : ''}>
@@ -120,7 +120,7 @@ export default function ModelSelector({ selectedModel, onModelChange }: ModelSel
                       selectedModel.id === model.id ? 'bg-blue-500/10 border-l-2 border-blue-500' : ''
                     }`}
                   >
-                    <span className={`text-sm font-medium ${
+                    <span className={`text-sm font-medium whitespace-normal leading-tight break-words ${
                       selectedModel.id === model.id ? 'text-blue-400' : 'text-zinc-200 group-hover:text-white'
                     }`}>
                       {model.name}

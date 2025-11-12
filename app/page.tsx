@@ -322,7 +322,7 @@ export default function Home() {
             className="border-b border-zinc-800/80 bg-black/95 backdrop-blur-md sticky top-0 z-10 shadow-2xl"
           >
             <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
                 {/* Left: Title */}
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
@@ -340,10 +340,10 @@ export default function Home() {
                   initial={{ x: 20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1, duration: 0.3 }}
-                  className="flex items-center gap-3 sm:gap-4 flex-shrink-0"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto"
                 >
                   {/* Model Selector */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <ModelSelector 
                       selectedModel={selectedModel} 
                       onModelChange={setSelectedModel}
@@ -352,7 +352,7 @@ export default function Home() {
 
                   {/* Token Counter */}
                   <div className="hidden sm:block h-10 w-px bg-zinc-800"></div>
-                  <div className="flex flex-col items-end justify-center min-w-[120px]">
+                  <div className="flex flex-col sm:items-end justify-center min-w-[120px]">
                     <div className="text-xs font-medium text-zinc-400 mb-0.5">Tokens</div>
                     <div className="flex items-baseline gap-1.5 justify-end">
                       <SlidingNumber value={totalTokens} className="text-xl font-bold text-blue-500 tabular-nums" />
