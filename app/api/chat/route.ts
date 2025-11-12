@@ -6,7 +6,7 @@ const ai = new GoogleGenAI({ apiKey });
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, history } = await request.json();
+    const { message, history, model } = await request.json();
 
     if (!message) {
       return new Response(
@@ -19,6 +19,17 @@ export async function POST(request: NextRequest) {
       return new Response(
         JSON.stringify({ error: 'API key is not configured' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use the selected model or default to gemini-2.0-flash-exp
+    const selectedModel = model || 'gemini-2.0-flash-exp';
+
+    // Check if it's a ChatGPT model (not supported yet)
+    if (selectedModel.startsWith('gpt-')) {
+      return new Response(
+        JSON.stringify({ error: 'ChatGPT models are not supported yet. Please use a Gemini model.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -41,8 +52,14 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         try {
           const response = await ai.models.generateContentStream({
-            model: 'gemini-2.5-flash',
+            model: selectedModel,
             contents: contents,
+            config: {
+              maxOutputTokens: 8192,
+              temperature: 1.0,
+              topP: 0.95,
+              topK: 40,
+            },
           });
 
           for await (const chunk of response) {

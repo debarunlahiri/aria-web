@@ -10,8 +10,9 @@ export const metadata: Metadata = {
   viewport: {
     width: 'device-width',
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+    maximumScale: 5,
+    userScalable: true,
+    viewportFit: 'cover',
   },
 }
 
@@ -22,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} dark:bg-gray-900`}>{children}</body>
+      <body className={`${inter.className} dark:bg-black`}>{children}</body>
     </html>
   )
 }

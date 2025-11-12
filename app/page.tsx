@@ -1,8 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
+import SlidingNumber from '@/components/SlidingNumber'
+import ModelSelector, { MODEL_GROUPS, type ModelOption } from '@/components/ModelSelector'
+import { estimateTokenCount } from '@/utils/tokenCounter'
 
 interface Message {
   role: 'user' | 'model'
@@ -14,6 +18,10 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
+  const [totalTokens, setTotalTokens] = useState(0)
+  const [selectedModel, setSelectedModel] = useState<ModelOption>(
+    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-2.5-flash') || MODEL_GROUPS[0].models[0]
+  )
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const messagesRef = useRef<Message[]>([])
@@ -22,6 +30,8 @@ export default function Home() {
   const activeRequestIdRef = useRef<number | null>(null)
   const aiMessageIndexRef = useRef<{ requestId: number; index: number } | null>(null)
   const cancelledRequestIdRef = useRef<number | null>(null)
+  const userHasScrolledRef = useRef(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (scrollTimeoutRef.current) {
@@ -41,23 +51,49 @@ export default function Home() {
 
   useEffect(() => {
     messagesRef.current = messages
+    // Calculate total tokens for all messages
+    const total = messages.reduce((sum, msg) => sum + estimateTokenCount(msg.content), 0)
+    setTotalTokens(total)
   }, [messages])
 
+  // Check if user is at bottom of scroll
+  const isAtBottom = () => {
+    const container = scrollContainerRef.current
+    if (!container) return true
+    const threshold = 150
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold
+  }
+
+  // Handle scroll event to detect manual scrolling
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      if (isStreaming) {
+        // User has scrolled up if they're not near the bottom
+        userHasScrolledRef.current = !isAtBottom()
+      }
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [isStreaming])
+
+  // Auto-scroll during streaming only if user hasn't scrolled up
   useEffect(() => {
     if (isStreaming) {
       const scrollInterval = setInterval(() => {
-        if (messagesEndRef.current) {
-          const container = messagesEndRef.current.parentElement
-          if (container) {
-            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200
-            if (isNearBottom) {
-              messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' })
-            }
-          }
+        // Only auto-scroll if user hasn't manually scrolled up
+        if (!userHasScrolledRef.current && messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' })
         }
       }, 100)
       
       return () => clearInterval(scrollInterval)
+    } else {
+      // Reset when streaming stops
+      userHasScrolledRef.current = false
     }
   }, [isStreaming])
 
@@ -77,6 +113,9 @@ export default function Home() {
     if (!cancelCurrentRequest()) {
       cancelledRequestIdRef.current = null
     }
+
+    // Reset scroll flag when sending new message
+    userHasScrolledRef.current = false
 
     const requestId = ++requestIdCounterRef.current
     activeRequestIdRef.current = requestId
@@ -126,7 +165,8 @@ export default function Home() {
         },
         body: JSON.stringify({
           message,
-          history
+          history,
+          model: selectedModel.id
         }),
         signal: controller.signal
       })
@@ -270,45 +310,149 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col h-screen bg-gradient-to-br from-gray-900 to-gray-800">
-      <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-6">
+    <main className="flex flex-col h-screen bg-black">
+      {/* Header with model selector and token counter */}
+      <AnimatePresence>
+        {messages.length > 0 && (
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="border-b border-zinc-800/80 bg-black/95 backdrop-blur-md sticky top-0 z-10 shadow-2xl"
+          >
+            <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4">
+              <div className="flex items-center justify-between gap-4">
+                {/* Left: Title */}
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                  className="flex-shrink-0"
+                >
+                  <h1 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    Aria
+                  </h1>
+                </motion.div>
+
+                {/* Right: Model Selector and Token Counter */}
+                <motion.div
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                  className="flex items-center gap-3 sm:gap-4 flex-shrink-0"
+                >
+                  {/* Model Selector */}
+                  <div className="flex items-center gap-2">
+                    <ModelSelector 
+                      selectedModel={selectedModel} 
+                      onModelChange={setSelectedModel}
+                    />
+                  </div>
+
+                  {/* Token Counter */}
+                  <div className="hidden sm:block h-10 w-px bg-zinc-800"></div>
+                  <div className="flex flex-col items-end justify-center min-w-[120px]">
+                    <div className="text-xs font-medium text-zinc-400 mb-0.5">Tokens</div>
+                    <div className="flex items-baseline gap-1.5 justify-end">
+                      <SlidingNumber value={totalTokens} className="text-xl font-bold text-blue-500 tabular-nums" />
+                      <span className="text-xs text-zinc-500 font-medium">total</span>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-6">
         <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
           {messages.length === 0 && (
-            <div className="text-center mt-10 sm:mt-20 px-4">
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-200 mb-3 sm:mb-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-center mt-16 sm:mt-24 px-4"
+            >
+              <motion.h1
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.5, ease: 'easeOut' }}
+                className="text-5xl sm:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mb-8 sm:mb-10"
+              >
                 Aria
-              </h1>
-              <p className="text-gray-400 text-base sm:text-lg">
-                Powered by Google Gemini
-              </p>
-              <p className="text-gray-500 mt-3 sm:mt-4 text-sm sm:text-base">
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="flex justify-center mb-8"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-zinc-900/80 backdrop-blur-sm rounded-2xl p-6 border border-zinc-800 shadow-2xl"
+                >
+                  <p className="text-xs text-zinc-400 mb-3 uppercase tracking-wider font-semibold">Select Model</p>
+                  <ModelSelector 
+                    selectedModel={selectedModel} 
+                    onModelChange={setSelectedModel}
+                  />
+                </motion.div>
+              </motion.div>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
+                className="text-zinc-500 text-sm sm:text-base max-w-md mx-auto"
+              >
                 Start a conversation by typing a message below
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
           )}
           
           {messages.map((message, index) => (
             <ChatMessage key={index} message={message} />
           ))}
           
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-800 rounded-lg px-3 sm:px-4 py-2 sm:py-3 shadow-md max-w-xs">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="flex justify-start"
+              >
+                <div className="bg-zinc-900 rounded-lg px-3 sm:px-4 py-2 sm:py-3 shadow-md max-w-xs border border-zinc-800">
+                  <div className="flex space-x-2">
+                    <motion.div
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-2 h-2 bg-zinc-500 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+                      className="w-2 h-2 bg-zinc-500 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                      className="w-2 h-2 bg-zinc-500 rounded-full"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           <div ref={messagesEndRef} />
         </div>
       </div>
       
-      <div className="border-t border-gray-700 bg-gray-900 safe-area-bottom">
-        <div className="max-w-4xl mx-auto p-2 sm:p-4">
+      <div className="border-t border-zinc-800/80 bg-black/95 backdrop-blur-md safe-area-bottom sticky bottom-0 z-10 shadow-2xl">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <ChatInput
             onSendMessage={handleSendMessage}
             onCancel={handleCancelRequest}

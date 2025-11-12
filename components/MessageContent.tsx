@@ -32,44 +32,44 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ ...props }) => (
-            <h1 className="text-2xl font-bold mt-6 mb-3 text-gray-100 leading-tight" {...props} />
+            <h1 className="text-2xl font-bold mt-6 mb-3 text-zinc-100 leading-tight" {...props} />
           ),
           h2: ({ ...props }) => (
-            <h2 className="text-xl font-bold mt-5 mb-3 text-gray-100 leading-tight" {...props} />
+            <h2 className="text-xl font-bold mt-5 mb-3 text-zinc-100 leading-tight" {...props} />
           ),
           h3: ({ ...props }) => (
-            <h3 className="text-lg font-semibold mt-4 mb-3 text-gray-100 leading-snug" {...props} />
+            <h3 className="text-lg font-semibold mt-4 mb-3 text-zinc-100 leading-snug" {...props} />
           ),
           h4: ({ ...props }) => (
-            <h4 className="text-base font-semibold mt-4 mb-2 text-gray-100 leading-snug" {...props} />
+            <h4 className="text-base font-semibold mt-4 mb-2 text-zinc-100 leading-snug" {...props} />
           ),
           h5: ({ ...props }) => (
-            <h5 className="text-sm font-semibold mt-3 mb-2 text-gray-100 leading-snug" {...props} />
+            <h5 className="text-sm font-semibold mt-3 mb-2 text-zinc-100 leading-snug" {...props} />
           ),
           h6: ({ ...props }) => (
-            <h6 className="text-sm font-semibold mt-3 mb-2 text-gray-100 leading-snug" {...props} />
+            <h6 className="text-sm font-semibold mt-3 mb-2 text-zinc-100 leading-snug" {...props} />
           ),
           p: ({ ...props }) => (
-            <p className="text-sm mb-4 leading-7 text-gray-200" {...props} />
+            <p className="text-sm mb-4 leading-7 text-zinc-200" {...props} />
           ),
           strong: ({ ...props }) => (
-            <strong className="font-bold text-gray-50" {...props} />
+            <strong className="font-bold text-zinc-50" {...props} />
           ),
           em: ({ ...props }) => (
-            <em className="italic text-gray-200" {...props} />
+            <em className="italic text-zinc-200" {...props} />
           ),
           ul: ({ ...props }) => (
-            <ul className="list-disc list-outside ml-5 mb-4 space-y-2 text-gray-200" {...props} />
+            <ul className="list-disc list-outside ml-5 mb-4 space-y-2 text-zinc-200" {...props} />
           ),
           ol: ({ ...props }) => (
-            <ol className="list-decimal list-outside ml-5 mb-4 space-y-2 text-gray-200" {...props} />
+            <ol className="list-decimal list-outside ml-5 mb-4 space-y-2 text-zinc-200" {...props} />
           ),
           li: ({ ...props }) => (
-            <li className="text-sm leading-7 text-gray-200 pl-1" {...props} />
+            <li className="text-sm leading-7 text-zinc-200 pl-1" {...props} />
           ),
           blockquote: ({ ...props }) => (
             <blockquote
-              className="border-l-4 border-gray-600 pl-4 my-4 italic text-gray-300 py-2"
+              className="border-l-4 border-zinc-600 pl-4 my-4 italic text-zinc-300 py-2"
               {...props}
             />
           ),
@@ -83,15 +83,15 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
 
             return !inline && language ? (
               <div className="relative my-3 rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between bg-gray-900 px-4 py-2 border-b border-gray-700">
-                  <span className="text-xs text-gray-400 uppercase font-mono">
+                <div className="flex items-center justify-between bg-zinc-950 px-4 py-2 border-b border-zinc-800">
+                  <span className="text-xs text-zinc-400 uppercase font-mono">
                     {language || 'code'}
                   </span>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(codeString)
                     }}
-                    className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                    className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
                     title="Copy code"
                   >
                     Copy
@@ -104,7 +104,7 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
                     customStyle={{
                       margin: 0,
                       padding: '1rem',
-                      background: '#1e1e1e',
+                      background: '#09090b',
                       borderRadius: '0 0 0.5rem 0.5rem',
                     }}
                     showLineNumbers={codeString.split('\n').length > 5}
@@ -118,14 +118,14 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
                     {codeString}
                   </SyntaxHighlighter>
                 ) : (
-                  <pre className="bg-gray-900 p-4 overflow-x-auto text-sm">
+                  <pre className="bg-zinc-950 p-4 overflow-x-auto text-sm">
                     <code>{codeString}</code>
                   </pre>
                 )}
               </div>
             ) : (
               <code
-                className="bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-gray-200"
+                className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono text-zinc-200"
                 {...props}
               >
                 {children}
@@ -137,37 +137,37 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
           ),
           a: ({ ...props }) => (
             <a
-              className="text-blue-400 hover:text-blue-300 underline"
+              className="text-blue-500 hover:text-blue-400 underline"
               target="_blank"
               rel="noopener noreferrer"
               {...props}
             />
           ),
           hr: ({ ...props }) => (
-            <hr className="my-6 border-gray-700" {...props} />
+            <hr className="my-6 border-zinc-800" {...props} />
           ),
           div: ({ ...props }) => (
             <div className="my-2" {...props} />
           ),
           table: ({ ...props }) => (
             <div className="overflow-x-auto my-2">
-              <table className="min-w-full border-collapse border border-gray-700" {...props} />
+              <table className="min-w-full border-collapse border border-zinc-800" {...props} />
             </div>
           ),
           thead: ({ ...props }) => (
-            <thead className="bg-gray-800" {...props} />
+            <thead className="bg-zinc-900" {...props} />
           ),
           tbody: ({ ...props }) => (
             <tbody {...props} />
           ),
           tr: ({ ...props }) => (
-            <tr className="border-b border-gray-700" {...props} />
+            <tr className="border-b border-zinc-800" {...props} />
           ),
           th: ({ ...props }) => (
-            <th className="border border-gray-700 px-4 py-2 text-left text-sm font-semibold text-gray-200" {...props} />
+            <th className="border border-zinc-800 px-4 py-2 text-left text-sm font-semibold text-zinc-200" {...props} />
           ),
           td: ({ ...props }) => (
-            <td className="border border-gray-700 px-4 py-2 text-sm text-gray-200" {...props} />
+            <td className="border border-zinc-800 px-4 py-2 text-sm text-zinc-200" {...props} />
           ),
         }}
       >
