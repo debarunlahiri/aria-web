@@ -28,20 +28,6 @@ const MODEL_GROUPS: ModelGroup[] = [
       { id: 'gemini-2.5-flash', name: '2.5 Flash', provider: 'Gemini' },
       { id: 'gemini-2.5-flash-preview-09-2025', name: '2.5 Flash Preview (09-2025)', provider: 'Gemini' },
       { id: 'gemini-2.5-flash-lite', name: '2.5 Flash Lite', provider: 'Gemini' },
-      { id: 'gemini-flash-lite-latest', name: 'Flash Lite (Latest)', provider: 'Gemini' },
-      { id: 'gemini-2.0-flash-exp', name: '2.0 Flash Experimental', provider: 'Gemini' },
-      { id: 'gemini-exp-1206', name: 'Exp 1206', provider: 'Gemini' },
-      { id: 'gemini-2.0-flash-thinking-exp-1219', name: '2.0 Flash Thinking', provider: 'Gemini' },
-      { id: 'gemini-1.5-pro', name: '1.5 Pro', provider: 'Gemini' },
-      { id: 'gemini-1.5-flash', name: '1.5 Flash', provider: 'Gemini' },
-    ],
-  },
-  {
-    provider: 'ChatGPT',
-    models: [
-      { id: 'gpt-4', name: 'GPT-4', provider: 'ChatGPT' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'ChatGPT' },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'ChatGPT' },
     ],
   },
 ]
