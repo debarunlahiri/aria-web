@@ -25,6 +25,9 @@ body {
 
 .markdown-content {
   line-height: 1.75;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .markdown-content h1,
@@ -117,6 +120,23 @@ body {
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #52525b;
+}
+
+/* Firefox scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 #18181b;
+}
+
+/* Smooth scrolling for textareas */
+textarea.scrollbar-thin {
+  scroll-behavior: smooth;
+}
+
+/* Word wrapping utilities */
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Mobile viewport adjustments */

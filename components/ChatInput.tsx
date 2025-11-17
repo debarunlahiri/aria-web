@@ -54,7 +54,7 @@ export default function ChatInput({ onSendMessage, onCancel, isStreaming }: Chat
         placeholder="Type your message..."
         whileFocus={{ scale: 1.01 }}
         transition={{ duration: 0.2 }}
-        className="flex-1 resize-none border border-zinc-700/50 hover:border-zinc-600 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-zinc-900/80 text-white placeholder-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto transition-colors"
+        className="flex-1 resize-none border border-zinc-700/50 hover:border-zinc-600 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-zinc-900/80 text-white placeholder-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto scrollbar-thin transition-colors"
         rows={1}
         style={{
           minHeight: '44px',
@@ -67,6 +67,10 @@ export default function ChatInput({ onSendMessage, onCancel, isStreaming }: Chat
           target.style.height = 'auto'
           const newHeight = Math.min(target.scrollHeight, 180)
           target.style.height = `${newHeight}px`
+          // Auto-scroll to bottom when content overflows
+          if (target.scrollHeight > 180) {
+            target.scrollTop = target.scrollHeight
+          }
         }}
       />
       <motion.button

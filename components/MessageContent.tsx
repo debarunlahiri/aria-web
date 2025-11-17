@@ -27,7 +27,7 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
   }, [])
 
   return (
-    <div className="markdown-content prose prose-invert max-w-none">
+    <div className="markdown-content prose prose-invert max-w-none break-words overflow-wrap-anywhere">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -50,7 +50,7 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
             <h6 className="text-sm font-semibold mt-3 mb-2 text-zinc-100 leading-snug" {...props} />
           ),
           p: ({ ...props }) => (
-            <p className="text-sm mb-4 leading-7 text-zinc-200" {...props} />
+            <p className="text-sm mb-4 leading-7 text-zinc-200 break-words overflow-wrap-anywhere" {...props} />
           ),
           strong: ({ ...props }) => (
             <strong className="font-bold text-zinc-50" {...props} />
@@ -65,7 +65,7 @@ export default function MessageContent({ content, isUser }: MessageContentProps)
             <ol className="list-decimal list-outside ml-5 mb-4 space-y-2 text-zinc-200" {...props} />
           ),
           li: ({ ...props }) => (
-            <li className="text-sm leading-7 text-zinc-200 pl-1" {...props} />
+            <li className="text-sm leading-7 text-zinc-200 pl-1 break-words overflow-wrap-anywhere" {...props} />
           ),
           blockquote: ({ ...props }) => (
             <blockquote

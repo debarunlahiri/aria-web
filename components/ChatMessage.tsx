@@ -24,9 +24,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className="flex justify-end"
       >
-        <div className="max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-xl px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg shadow-lg bg-blue-600 text-white">
+        <div className="max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-xl px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl bg-zinc-800 border border-zinc-700/50 text-white break-words overflow-wrap-anywhere min-w-0">
           <MessageContent content={message.content} isUser={isUser} />
-          <p className="text-xs mt-1.5 sm:mt-2 text-blue-200">
+          <p className="text-xs mt-1.5 sm:mt-2 text-zinc-400">
             {message.timestamp.toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
@@ -44,7 +44,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="w-full"
     >
-      <div className="w-full text-zinc-100">
+      <div className="w-full text-zinc-100 break-words overflow-wrap-anywhere min-w-0">
         <MessageContent content={message.content} isUser={isUser} />
         <p className="text-xs mt-2 sm:mt-3 text-zinc-500">
           {message.timestamp.toLocaleTimeString([], {
