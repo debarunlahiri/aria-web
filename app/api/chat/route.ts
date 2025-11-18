@@ -88,8 +88,80 @@ export async function POST(request: NextRequest) {
           controller.close();
         } catch (error: any) {
           console.error('Error in stream:', error);
+          
+          let errorMessage = error.message || 'Failed to get response from Gemini';
+          let retryAfter = null;
+          let statusCode = 500;
+          
+          // Parse nested JSON error messages (error.message might contain JSON string)
+          let parsedError: any = null;
+          try {
+            if (typeof error.message === 'string' && error.message.trim().startsWith('{')) {
+              parsedError = JSON.parse(error.message);
+            }
+          } catch (e) {
+            // Not JSON, continue with original error
+          }
+          
+          // Check for 429 errors in various places
+          const is429 = error.status === 429 || 
+                       error.code === 429 || 
+                       error.statusCode === 429 ||
+                       parsedError?.error?.code === 429 ||
+                       parsedError?.code === 429;
+          
+          if (is429) {
+            statusCode = 429;
+            errorMessage = 'Rate limit exceeded. You have exceeded your API quota.';
+            
+            // Try to extract retry delay from error response
+            try {
+              const errorResponse = parsedError || error.response || error.error || error;
+              
+              // Check if errorResponse is a string that needs parsing
+              let errorObj = errorResponse;
+              if (typeof errorResponse === 'string') {
+                try {
+                  errorObj = JSON.parse(errorResponse);
+                } catch (e) {
+                  errorObj = errorResponse;
+                }
+              }
+              
+              // Try to find retry info in nested structure
+              const errorDetails = errorObj?.error?.details || errorObj?.details || [];
+              const retryInfo = errorDetails.find((d: any) => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+              
+              if (retryInfo?.retryDelay) {
+                const delayMatch = retryInfo.retryDelay.match(/(\d+(?:\.\d+)?)s?/);
+                if (delayMatch) {
+                  retryAfter = Math.ceil(parseFloat(delayMatch[1]));
+                }
+              }
+              
+              // If no retry delay found, check the error message
+              if (!retryAfter) {
+                const errorMsg = errorObj?.error?.message || errorObj?.message || error.message || '';
+                const messageMatch = errorMsg.match(/retry in (\d+(?:\.\d+)?)s/i);
+                if (messageMatch) {
+                  retryAfter = Math.ceil(parseFloat(messageMatch[1]));
+                }
+              }
+            } catch (parseError) {
+              console.error('Error parsing retry delay:', parseError);
+            }
+            
+            if (retryAfter) {
+              errorMessage = `Rate limit exceeded. Please retry in ${retryAfter} seconds.`;
+            } else {
+              errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+            }
+          }
+          
           const errorData = JSON.stringify({ 
-            error: error.message || 'Failed to get response from Gemini',
+            error: errorMessage,
+            code: statusCode,
+            retryAfter,
             done: true 
           });
           controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
@@ -107,12 +179,84 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error calling Gemini API:', error);
+    
+    let errorMessage = error.message || 'Failed to get response from Gemini';
+    let retryAfter = null;
+    let statusCode = 500;
+    
+    // Parse nested JSON error messages (error.message might contain JSON string)
+    let parsedError: any = null;
+    try {
+      if (typeof error.message === 'string' && error.message.trim().startsWith('{')) {
+        parsedError = JSON.parse(error.message);
+      }
+    } catch (e) {
+      // Not JSON, continue with original error
+    }
+    
+    // Check for 429 errors in various places
+    const is429 = error.status === 429 || 
+                 error.code === 429 || 
+                 error.statusCode === 429 ||
+                 parsedError?.error?.code === 429 ||
+                 parsedError?.code === 429;
+    
+    if (is429) {
+      statusCode = 429;
+      errorMessage = 'Rate limit exceeded. You have exceeded your API quota.';
+      
+      // Try to extract retry delay from error response
+      try {
+        const errorResponse = parsedError || error.response || error.error || error;
+        
+        // Check if errorResponse is a string that needs parsing
+        let errorObj = errorResponse;
+        if (typeof errorResponse === 'string') {
+          try {
+            errorObj = JSON.parse(errorResponse);
+          } catch (e) {
+            errorObj = errorResponse;
+          }
+        }
+        
+        // Try to find retry info in nested structure
+        const errorDetails = errorObj?.error?.details || errorObj?.details || [];
+        const retryInfo = errorDetails.find((d: any) => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+        
+        if (retryInfo?.retryDelay) {
+          const delayMatch = retryInfo.retryDelay.match(/(\d+(?:\.\d+)?)s?/);
+          if (delayMatch) {
+            retryAfter = Math.ceil(parseFloat(delayMatch[1]));
+          }
+        }
+        
+        // If no retry delay found, check the error message
+        if (!retryAfter) {
+          const errorMsg = errorObj?.error?.message || errorObj?.message || error.message || '';
+          const messageMatch = errorMsg.match(/retry in (\d+(?:\.\d+)?)s/i);
+          if (messageMatch) {
+            retryAfter = Math.ceil(parseFloat(messageMatch[1]));
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing retry delay:', parseError);
+      }
+      
+      if (retryAfter) {
+        errorMessage = `Rate limit exceeded. Please retry in ${retryAfter} seconds.`;
+      } else {
+        errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+      }
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to get response from Gemini',
+        error: errorMessage,
+        code: statusCode,
+        retryAfter,
         success: false 
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: statusCode, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

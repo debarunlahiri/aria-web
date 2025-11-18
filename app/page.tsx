@@ -172,7 +172,20 @@ export default function Home() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to get response')
+        // Try to parse error response for better error messages
+        let errorData = null;
+        try {
+          const text = await response.text();
+          errorData = JSON.parse(text);
+        } catch (e) {
+          // If parsing fails, use default error
+        }
+        
+        const error = new Error(errorData?.error || 'Failed to get response');
+        (error as any).status = response.status;
+        (error as any).code = errorData?.code || response.status;
+        (error as any).retryAfter = errorData?.retryAfter;
+        throw error;
       }
 
       const reader = response.body?.getReader()
@@ -211,9 +224,20 @@ export default function Home() {
                       : aiMessageIndex
 
                   if (updated[targetIndex]) {
+                    let errorMessage = data.error;
+                    
+                    // Format 429 errors with better messaging
+                    if (data.code === 429) {
+                      if (data.retryAfter) {
+                        errorMessage = `Rate limit exceeded. Please retry in ${data.retryAfter} seconds.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
+                      } else {
+                        errorMessage = `Rate limit exceeded. Please wait a moment and try again.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
+                      }
+                    }
+                    
                     updated[targetIndex] = {
                       ...updated[targetIndex],
-                      content: `Error: ${data.error}`
+                      content: errorMessage
                     }
                   }
                   messagesRef.current = updated
@@ -285,9 +309,29 @@ export default function Home() {
               : aiMessageIndex
 
           if (updated[targetIndex]) {
+            let errorMessage = 'Failed to connect to the API. Please check your connection.';
+            
+            // Handle 429 rate limit errors
+            if ((error as any).code === 429 || (error as any).status === 429) {
+              const retryAfter = (error as any).retryAfter;
+              if (retryAfter) {
+                errorMessage = `Rate limit exceeded. Please retry in ${retryAfter} seconds.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
+              } else {
+                errorMessage = `Rate limit exceeded. Please wait a moment and try again.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
+              }
+            } else if ((error as any).message) {
+              // Check if error message contains rate limit info
+              const errorMsg = (error as any).message.toLowerCase();
+              if (errorMsg.includes('quota') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+                errorMessage = `Rate limit exceeded. Please wait a moment and try again.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
+              } else {
+                errorMessage = (error as any).message || errorMessage;
+              }
+            }
+            
             updated[targetIndex] = {
               ...updated[targetIndex],
-              content: 'Failed to connect to the API. Please check your connection.'
+              content: errorMessage
             }
           }
           messagesRef.current = updated
