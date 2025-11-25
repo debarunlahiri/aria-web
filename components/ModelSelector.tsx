@@ -24,7 +24,7 @@ const MODEL_GROUPS: ModelGroup[] = [
   {
     provider: 'Gemini',
     models: [
-      { id: 'gemini-3-pro-preview', name: '3.5 Pro Preview', provider: 'Gemini' },
+      { id: 'gemini-3-pro-preview', name: '3.0 Pro Preview', provider: 'Gemini' },
       { id: 'gemini-2.5-pro', name: '2.5 Pro', provider: 'Gemini' },
       { id: 'gemini-2.5-flash', name: '2.5 Flash', provider: 'Gemini' },
       { id: 'gemini-2.5-flash-preview-09-2025', name: '2.5 Flash Preview (09-2025)', provider: 'Gemini' },
