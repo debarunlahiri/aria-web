@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Home as HomeIcon } from 'lucide-react'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SlidingNumber from '@/components/SlidingNumber'
@@ -367,16 +368,32 @@ export default function Home() {
           >
             <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                {/* Left: Title */}
+                {/* Left: Title and Home Button */}
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1, duration: 0.3 }}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 flex items-center gap-3"
                 >
-                  <h1 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                    Aria
-                  </h1>
+                  <motion.a
+                    href="https://lambrk.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="p-2 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-200"
+                    aria-label="Home"
+                  >
+                    <HomeIcon className="w-5 h-5 text-zinc-300 hover:text-white" />
+                  </motion.a>
+                  <div className="flex flex-col">
+                    <h1 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                      Aria
+                    </h1>
+                    <p className="text-[10px] sm:text-xs text-zinc-500 font-medium">
+                      Powered by Lambrk
+                    </p>
+                  </div>
                 </motion.div>
 
                 {/* Right: Model Selector and Token Counter */}
