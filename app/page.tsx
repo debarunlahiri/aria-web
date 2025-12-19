@@ -21,7 +21,7 @@ export default function Home() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [totalTokens, setTotalTokens] = useState(0)
   const [selectedModel, setSelectedModel] = useState<ModelOption>(
-    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-2.5-flash') || MODEL_GROUPS[0].models[0]
+    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-flash-preview') || MODEL_GROUPS[0].models[0]
   )
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
