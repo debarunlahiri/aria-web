@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SlidingNumber from '@/components/SlidingNumber'
@@ -20,7 +21,7 @@ export default function Home() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [totalTokens, setTotalTokens] = useState(0)
   const [selectedModel, setSelectedModel] = useState<ModelOption>(
-    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-2.5-flash') || MODEL_GROUPS[0].models[0]
+    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-flash-preview') || MODEL_GROUPS[0].models[1]
   )
   const [showHeader, setShowHeader] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
