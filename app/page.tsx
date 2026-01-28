@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home as HomeIcon, ChevronUp, ChevronDown, Menu, X } from 'lucide-react'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SlidingNumber from '@/components/SlidingNumber'
@@ -21,7 +20,7 @@ export default function Home() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [totalTokens, setTotalTokens] = useState(0)
   const [selectedModel, setSelectedModel] = useState<ModelOption>(
-    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-flash-preview') || MODEL_GROUPS[0].models[1]
+    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-2.5-flash') || MODEL_GROUPS[0].models[0]
   )
   const [showHeader, setShowHeader] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
@@ -514,43 +513,19 @@ export default function Home() {
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="border-b border-zinc-800/80 bg-black/95 backdrop-blur-md sticky top-0 z-10 shadow-2xl overflow-hidden"
           >
-            <div className="max-w-4xl mx-auto px-2 sm:px-6 py-2 sm:py-4">
-              <div className="flex items-center justify-between gap-2 sm:gap-6">
-                {/* Left: Hamburger Menu (Mobile) and Title */}
-                <div className="flex items-center gap-3 sm:gap-4">
-                  {/* Hamburger Menu - Mobile Only */}
-                  <motion.button
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.3 }}
-                    onClick={toggleMenu}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="sm:hidden p-1.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-200"
-                    aria-label="Toggle menu"
-                  >
-                    {isMenuOpen ? (
-                      <X className="w-4 h-4 text-zinc-300 hover:text-white" />
-                    ) : (
-                      <Menu className="w-4 h-4 text-zinc-300 hover:text-white" />
-                    )}
-                  </motion.button>
-
-                  {/* Title */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.3 }}
-                    className="flex flex-col"
-                  >
-                    <h1 className="text-lg sm:text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                      Aria
-                    </h1>
-                    <p className="text-[9px] sm:text-[10px] sm:text-xs text-zinc-500 font-medium">
-                      Powered by Lambrk
-                    </p>
-                  </motion.div>
-                </div>
+            <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                {/* Left: Title */}
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                  className="flex-shrink-0"
+                >
+                  <h1 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                    Aria
+                  </h1>
+                </motion.div>
 
                 {/* Right: Model Selector and Token Counter - Desktop Only */}
                 <motion.div
