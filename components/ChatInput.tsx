@@ -52,6 +52,7 @@ export default function ChatInput({ onSendMessage, onCancel, isStreaming }: Chat
         onChange={(e) => setMessage(e.target.value)}
         onKeyPress={handleKeyPress}
         placeholder="Type your message..."
+        disabled={isStreaming}
         whileFocus={{ scale: 1.01 }}
         transition={{ duration: 0.2 }}
         className="flex-1 resize-none border border-zinc-700/50 hover:border-zinc-600 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-zinc-900/80 text-white placeholder-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto scrollbar-thin transition-colors"
@@ -73,22 +74,27 @@ export default function ChatInput({ onSendMessage, onCancel, isStreaming }: Chat
           }
         }}
       />
-      <motion.button
-        onClick={handleSend}
-        disabled={!message.trim()}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="flex-shrink-0 p-2.5 sm:p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-blue-500/20"
-        aria-label="Send message"
-      >
-        <motion.div
-          animate={message.trim() ? { rotate: [0, -10, 10, 0] } : {}}
-          transition={{ duration: 0.3 }}
+      
+      {!isStreaming ? (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          onClick={handleSend}
+          disabled={!message.trim()}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex-shrink-0 p-2.5 sm:p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-blue-500/20"
+          aria-label="Send message"
         >
-          <Send className="w-5 h-5" />
-        </motion.div>
-      </motion.button>
-      {isStreaming && onCancel && (
+          <motion.div
+            animate={message.trim() ? { rotate: [0, -10, 10, 0] } : {}}
+            transition={{ duration: 0.3 }}
+          >
+            <Send className="w-5 h-5" />
+          </motion.div>
+        </motion.button>
+      ) : (
         <motion.button
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

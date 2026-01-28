@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Home as HomeIcon, ChevronUp, ChevronDown, Menu, X } from 'lucide-react'
 import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SlidingNumber from '@/components/SlidingNumber'
@@ -20,10 +21,16 @@ export default function Home() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [totalTokens, setTotalTokens] = useState(0)
   const [selectedModel, setSelectedModel] = useState<ModelOption>(
-    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-2.5-flash') || MODEL_GROUPS[0].models[0]
+    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-flash-preview') || MODEL_GROUPS[0].models[1]
   )
+  const [showHeader, setShowHeader] = useState(true)
+  const [lastScrollY, setLastScrollY] = useState(0)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const hamburgerMenuRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const headerScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const messagesRef = useRef<Message[]>([])
   const abortControllerRef = useRef<AbortController | null>(null)
   const requestIdCounterRef = useRef(0)
@@ -64,21 +71,53 @@ export default function Home() {
     return container.scrollHeight - container.scrollTop - container.clientHeight < threshold
   }
 
-  // Handle scroll event to detect manual scrolling
+  // Handle scroll event to detect manual scrolling and header collapse
   useEffect(() => {
     const container = scrollContainerRef.current
     if (!container) return
 
     const handleScroll = () => {
+      const currentScrollY = container.scrollTop
+      
       if (isStreaming) {
         // User has scrolled up if they're not near the bottom
         userHasScrolledRef.current = !isAtBottom()
       }
+
+      // Clear existing timeout
+      if (headerScrollTimeoutRef.current) {
+        clearTimeout(headerScrollTimeoutRef.current)
+      }
+
+      // Debounce header collapse logic
+      headerScrollTimeoutRef.current = setTimeout(() => {
+        const scrollThreshold = 50
+        const scrollDifference = Math.abs(currentScrollY - lastScrollY)
+        
+        // Only toggle header if scroll difference is significant
+        if (scrollDifference > scrollThreshold) {
+          // Header collapse logic
+          if (currentScrollY > lastScrollY && currentScrollY > 100) {
+            // Scrolling down and past threshold - hide header
+            setShowHeader(false)
+          } else if (currentScrollY < lastScrollY) {
+            // Scrolling up - show header
+            setShowHeader(true)
+          }
+        }
+      }, 100) // 100ms debounce
+
+      setLastScrollY(currentScrollY)
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
-    return () => container.removeEventListener('scroll', handleScroll)
-  }, [isStreaming])
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      if (headerScrollTimeoutRef.current) {
+        clearTimeout(headerScrollTimeoutRef.current)
+      }
+    }
+  }, [isStreaming, lastScrollY])
 
   // Auto-scroll during streaming only if user hasn't scrolled up
   useEffect(() => {
@@ -96,6 +135,52 @@ export default function Home() {
       userHasScrolledRef.current = false
     }
   }, [isStreaming])
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleInteractionOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node
+      
+      // Check if click is outside the hamburger menu dropdown
+      if (hamburgerMenuRef.current && !hamburgerMenuRef.current.contains(target)) {
+        // Check if click is on the menu button
+        const menuButton = document.querySelector('[aria-label="Toggle menu"]')
+        if (menuButton?.contains(target)) {
+          return // Don't close if clicking the menu button itself
+        }
+        
+        // Check if click is inside any model selector dropdown
+        const modelDropdowns = Array.from(document.querySelectorAll('[data-model-selector="dropdown"]'))
+        for (const dropdown of modelDropdowns) {
+          if (dropdown.contains(target)) {
+            return // Don't close if clicking inside model dropdown
+          }
+        }
+        
+        // If we get here, close the menu
+        setIsMenuOpen(false)
+      }
+    }
+
+    if (isMenuOpen) {
+      // Add both mouse and touch event listeners
+      document.addEventListener('mousedown', handleInteractionOutside)
+      document.addEventListener('touchstart', handleInteractionOutside)
+      
+      return () => {
+        document.removeEventListener('mousedown', handleInteractionOutside)
+        document.removeEventListener('touchstart', handleInteractionOutside)
+      }
+    }
+  }, [isMenuOpen])
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen)
+  }
+
+  const toggleHeader = () => {
+    setShowHeader(!showHeader)
+  }
 
   const cancelCurrentRequest = () => {
     if (abortControllerRef.current && activeRequestIdRef.current !== null) {
@@ -158,7 +243,7 @@ export default function Home() {
     abortControllerRef.current = controller
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -226,6 +311,25 @@ export default function Home() {
                   if (updated[targetIndex]) {
                     let errorMessage = data.error;
                     
+                    // Try to parse nested JSON error messages
+                    if (typeof data.error === 'string') {
+                      try {
+                        const nestedError = JSON.parse(data.error);
+                        if (nestedError.error && nestedError.error.message) {
+                          errorMessage = nestedError.error.message;
+                        } else if (nestedError.message) {
+                          errorMessage = nestedError.message;
+                        }
+                      } catch (e) {
+                        // Keep original error message if parsing fails
+                      }
+                    } else if (data.error && typeof data.error === 'object') {
+                      // Handle simple JSON error format: {"error": {"code": 503, "message": "...", "status": "..."}}
+                      if (data.error.message) {
+                        errorMessage = data.error.message;
+                      }
+                    }
+                    
                     // Format 429 errors with better messaging
                     if (data.code === 429) {
                       if (data.retryAfter) {
@@ -233,6 +337,11 @@ export default function Home() {
                       } else {
                         errorMessage = `Rate limit exceeded. Please wait a moment and try again.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
                       }
+                    }
+                    
+                    // Format 503 service unavailable errors
+                    if (data.code === 503) {
+                      errorMessage = `Service Unavailable: ${errorMessage}\n\nThe model is currently overloaded. Please try again in a few moments.`;
                     }
                     
                     updated[targetIndex] = {
@@ -311,8 +420,12 @@ export default function Home() {
           if (updated[targetIndex]) {
             let errorMessage = 'Failed to connect to the API. Please check your connection.';
             
+            // Handle 503 service unavailable errors
+            if ((error as any).code === 503 || (error as any).status === 503) {
+              errorMessage = `Service Unavailable: The model is currently overloaded. Please try again in a few moments.`;
+            }
             // Handle 429 rate limit errors
-            if ((error as any).code === 429 || (error as any).status === 429) {
+            else if ((error as any).code === 429 || (error as any).status === 429) {
               const retryAfter = (error as any).retryAfter;
               if (retryAfter) {
                 errorMessage = `Rate limit exceeded. Please retry in ${retryAfter} seconds.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
@@ -320,12 +433,42 @@ export default function Home() {
                 errorMessage = `Rate limit exceeded. Please wait a moment and try again.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
               }
             } else if ((error as any).message) {
+              // Try to parse nested JSON error messages
+              let errorMsg = (error as any).message;
+              if (typeof errorMsg === 'string') {
+                try {
+                  const nestedError = JSON.parse(errorMsg);
+                  if (nestedError.error && nestedError.error.message) {
+                    errorMsg = nestedError.error.message;
+                  } else if (nestedError.message) {
+                    errorMsg = nestedError.message;
+                  }
+                } catch (e) {
+                  // Try to parse simple JSON error format
+                  try {
+                    const simpleError = JSON.parse(errorMsg);
+                    if (simpleError.error && simpleError.error.message) {
+                      errorMsg = simpleError.error.message;
+                    }
+                  } catch (e2) {
+                    // Keep original error message if parsing fails
+                  }
+                }
+              } else if ((error as any).error && typeof (error as any).error === 'object') {
+                // Handle simple JSON error format: {"error": {"code": 503, "message": "...", "status": "..."}}
+                if ((error as any).error.message) {
+                  errorMsg = (error as any).error.message;
+                }
+              }
+              
               // Check if error message contains rate limit info
-              const errorMsg = (error as any).message.toLowerCase();
-              if (errorMsg.includes('quota') || errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+              const lowerErrorMsg = errorMsg.toLowerCase();
+              if (lowerErrorMsg.includes('quota') || lowerErrorMsg.includes('rate limit') || lowerErrorMsg.includes('429')) {
                 errorMessage = `Rate limit exceeded. Please wait a moment and try again.\n\nYou have exceeded your API quota. Check your plan and billing details at https://ai.google.dev/gemini-api/docs/rate-limits`;
+              } else if (lowerErrorMsg.includes('overload') || lowerErrorMsg.includes('unavailable') || lowerErrorMsg.includes('503')) {
+                errorMessage = `Service Unavailable: ${errorMsg}\n\nThe model is currently overloaded. Please try again in a few moments.`;
               } else {
-                errorMessage = (error as any).message || errorMessage;
+                errorMessage = errorMsg || errorMessage;
               }
             }
             
@@ -354,40 +497,70 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col h-screen bg-black">
+    <div className="flex flex-col h-screen bg-black relative" ref={menuRef}>
       {/* Header with model selector and token counter */}
       <AnimatePresence>
         {messages.length > 0 && (
           <motion.div
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
+            initial={{ y: -100, opacity: 0, height: 0 }}
+            animate={{ 
+              y: showHeader ? 0 : -100, 
+              opacity: showHeader ? 1 : 0,
+              height: showHeader ? 'auto' : 0,
+              marginTop: showHeader ? 0 : -1,
+              marginBottom: showHeader ? 0 : -1
+            }}
+            exit={{ y: -100, opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="border-b border-zinc-800/80 bg-black/95 backdrop-blur-md sticky top-0 z-10 shadow-2xl"
+            className="border-b border-zinc-800/80 bg-black/95 backdrop-blur-md sticky top-0 z-10 shadow-2xl overflow-hidden"
           >
-            <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                {/* Left: Title */}
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.3 }}
-                  className="flex-shrink-0"
-                >
-                  <h1 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                    Aria
-                  </h1>
-                </motion.div>
+            <div className="max-w-4xl mx-auto px-2 sm:px-6 py-2 sm:py-4">
+              <div className="flex items-center justify-between gap-2 sm:gap-6">
+                {/* Left: Hamburger Menu (Mobile) and Title */}
+                <div className="flex items-center gap-3 sm:gap-4">
+                  {/* Hamburger Menu - Mobile Only */}
+                  <motion.button
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.3 }}
+                    onClick={toggleMenu}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="sm:hidden p-1.5 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-200"
+                    aria-label="Toggle menu"
+                  >
+                    {isMenuOpen ? (
+                      <X className="w-4 h-4 text-zinc-300 hover:text-white" />
+                    ) : (
+                      <Menu className="w-4 h-4 text-zinc-300 hover:text-white" />
+                    )}
+                  </motion.button>
 
-                {/* Right: Model Selector and Token Counter */}
+                  {/* Title */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.3 }}
+                    className="flex flex-col"
+                  >
+                    <h1 className="text-lg sm:text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                      Aria
+                    </h1>
+                    <p className="text-[9px] sm:text-[10px] sm:text-xs text-zinc-500 font-medium">
+                      Powered by Lambrk
+                    </p>
+                  </motion.div>
+                </div>
+
+                {/* Right: Model Selector and Token Counter - Desktop Only */}
                 <motion.div
                   initial={{ x: 20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1, duration: 0.3 }}
-                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto"
+                  className="hidden sm:flex items-center gap-4"
                 >
                   {/* Model Selector */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
                     <ModelSelector 
                       selectedModel={selectedModel} 
                       onModelChange={setSelectedModel}
@@ -395,8 +568,8 @@ export default function Home() {
                   </div>
 
                   {/* Token Counter */}
-                  <div className="hidden sm:block h-10 w-px bg-zinc-800"></div>
-                  <div className="flex flex-col sm:items-end justify-center min-w-[120px]">
+                  <div className="h-10 w-px bg-zinc-800"></div>
+                  <div className="flex flex-col items-end justify-center min-w-[120px]">
                     <div className="text-xs font-medium text-zinc-400 mb-0.5">Tokens</div>
                     <div className="flex items-baseline gap-1.5 justify-end">
                       <SlidingNumber value={totalTokens} className="text-xl font-bold text-blue-500 tabular-nums" />
@@ -410,7 +583,104 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-6">
+      {/* Hamburger Menu Dropdown */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="absolute top-16 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 bg-zinc-900/95 backdrop-blur-md border border-zinc-800/50 shadow-2xl z-[50] rounded-xl overflow-hidden"
+            ref={hamburgerMenuRef}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 space-y-6">
+              {/* Model Selector */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Model</div>
+                </div>
+                <div className="bg-zinc-800/30 rounded-lg p-1">
+                  <ModelSelector 
+                    selectedModel={selectedModel} 
+                    onModelChange={setSelectedModel}
+                    onCloseMenu={() => setIsMenuOpen(false)}
+                  />
+                </div>
+              </div>
+
+              {/* Token Counter */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                  <div className="text-xs font-bold text-zinc-300 uppercase tracking-wider">Usage</div>
+                </div>
+                <div className="bg-gradient-to-r from-zinc-800/50 to-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-500/10 rounded-lg">
+                        <div className="text-xs font-medium text-blue-400">Tokens</div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-baseline gap-1">
+                          <SlidingNumber value={totalTokens} className="text-xl font-bold text-blue-400 tabular-nums" />
+                          <span className="text-xs text-zinc-500 font-medium">total</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Home Link */}
+              <div className="pt-2 border-t border-zinc-800/50">
+                <motion.a
+                  href="https://lambrk.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-all duration-200 text-zinc-300 hover:text-white group"
+                >
+                  <div className="p-2 bg-zinc-700/50 rounded-lg group-hover:bg-zinc-700 transition-colors">
+                    <HomeIcon className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">Visit Lambrk</span>
+                    <span className="text-xs text-zinc-500">Learn more about our platform</span>
+                  </div>
+                </motion.a>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-6 relative">
+        {/* Header Toggle Button */}
+        {messages.length > 0 && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            onClick={toggleHeader}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="fixed top-4 right-4 z-20 p-2 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-200 shadow-md hover:shadow-lg"
+            aria-label={showHeader ? "Hide header" : "Show header"}
+          >
+            {showHeader ? (
+              <ChevronUp className="w-4 h-4 text-zinc-300 hover:text-white" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-zinc-300 hover:text-white" />
+            )}
+          </motion.button>
+        )}
+        
         <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
           {messages.length === 0 && (
             <motion.div
@@ -504,7 +774,6 @@ export default function Home() {
           />
         </div>
       </div>
-    </main>
+    </div>
   )
 }
-

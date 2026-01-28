@@ -65,16 +65,21 @@ export async function POST(request: NextRequest) {
           for await (const chunk of response) {
             let text = '';
             
+            // Try to extract text from various possible chunk structures
             if (chunk.text) {
               text = chunk.text;
             } else if (typeof chunk === 'string') {
               text = chunk;
+            } else if ((chunk as any).candidates?.[0]?.content?.parts?.[0]?.text) {
+              text = (chunk as any).candidates[0].content.parts[0].text;
+            } else if ((chunk as any).content?.parts?.[0]?.text) {
+              text = (chunk as any).content.parts[0].text;
+            } else if ((chunk as any).parts?.[0]?.text) {
+              text = (chunk as any).parts[0].text;
             } else {
-              try {
-                text = String(chunk);
-              } catch (e) {
-                console.error('Error extracting text from chunk:', e, chunk);
-              }
+              // Skip this chunk if we can't extract text
+              console.warn('Unable to extract text from chunk:', JSON.stringify(chunk));
+              continue;
             }
             
             if (text) {
