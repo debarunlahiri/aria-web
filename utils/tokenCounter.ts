@@ -22,3 +22,72 @@ export function estimateTokenCount(text: string): number {
   return Math.max(1, estimate)
 }
 
+export interface ModelPricing {
+  inputPerMillion: number
+  outputPerMillion: number
+}
+
+export const MODEL_PRICING: Record<string, ModelPricing> = {
+  'gemini-3.5-flash': {
+    inputPerMillion: 1.5,
+    outputPerMillion: 9,
+  },
+  'gemini-3-flash-preview': {
+    inputPerMillion: 0.5,
+    outputPerMillion: 3,
+  },
+  'gemini-3.1-pro-preview': {
+    inputPerMillion: 2,
+    outputPerMillion: 12,
+  },
+  'deep-research-preview-04-2026': {
+    inputPerMillion: 2,
+    outputPerMillion: 12,
+  },
+  'deep-research-max-preview-04-2026': {
+    inputPerMillion: 2,
+    outputPerMillion: 12,
+  },
+  'antigravity-preview-05-2026': {
+    inputPerMillion: 1.5,
+    outputPerMillion: 9,
+  },
+}
+
+export interface UsageCost {
+  inputTokens: number
+  outputTokens: number
+  inputCost: number
+  outputCost: number
+  totalCost: number
+}
+
+export function calculateUsageCost(
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number
+): UsageCost | null {
+  const pricing = MODEL_PRICING[modelId]
+
+  if (!pricing) {
+    return null
+  }
+
+  const inputCost = (inputTokens / 1_000_000) * pricing.inputPerMillion
+  const outputCost = (outputTokens / 1_000_000) * pricing.outputPerMillion
+
+  return {
+    inputTokens,
+    outputTokens,
+    inputCost,
+    outputCost,
+    totalCost: inputCost + outputCost,
+  }
+}
+
+export function formatCost(cost: number): string {
+  if (cost === 0) return '$0.000000'
+  if (cost < 0.000001) return '<$0.000001'
+
+  return `$${cost.toFixed(6)}`
+}

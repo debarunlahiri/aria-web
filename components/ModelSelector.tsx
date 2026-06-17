@@ -26,9 +26,13 @@ const MODEL_GROUPS: ModelGroup[] = [
   {
     provider: 'Gemini',
     models: [
+      { id: 'gemini-3.5-flash', name: '3.5 Flash', provider: 'Gemini' },
       { id: 'gemini-3.1-pro-preview', name: '3.1 Pro Preview', provider: 'Gemini' },
       { id: 'gemini-3-pro-preview', name: '3.0 Pro Preview', provider: 'Gemini' },
       { id: 'gemini-3-flash-preview', name: '3.0 Flash Preview', provider: 'Gemini' },
+      { id: 'deep-research-preview-04-2026', name: 'Deep Research Preview 04-2026', provider: 'Gemini' },
+      { id: 'deep-research-max-preview-04-2026', name: 'Deep Research Max Preview 04-2026', provider: 'Gemini' },
+      { id: 'antigravity-preview-05-2026', name: 'Antigravity Preview 05-2026', provider: 'Gemini' },
       { id: 'gemini-flash-latest', name: 'Flash', provider: 'Gemini' },
       { id: 'gemini-flash-lite-latest', name: 'Flash Lite', provider: 'Gemini' },
       { id: 'imagen-4.0-generate-001', name: 'Imagen 4.0', provider: 'Gemini' },

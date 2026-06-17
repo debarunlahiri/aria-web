@@ -7,12 +7,13 @@ import ChatMessage from '@/components/ChatMessage'
 import ChatInput from '@/components/ChatInput'
 import SlidingNumber from '@/components/SlidingNumber'
 import ModelSelector, { MODEL_GROUPS, type ModelOption } from '@/components/ModelSelector'
-import { estimateTokenCount } from '@/utils/tokenCounter'
+import { calculateUsageCost, estimateTokenCount, formatCost, type UsageCost } from '@/utils/tokenCounter'
 
 interface Message {
   role: 'user' | 'model'
   content: string
   timestamp: Date
+  usage?: UsageCost
 }
 
 export default function Home() {
@@ -20,8 +21,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
   const [totalTokens, setTotalTokens] = useState(0)
+  const [totalInputCost, setTotalInputCost] = useState(0)
+  const [totalOutputCost, setTotalOutputCost] = useState(0)
   const [selectedModel, setSelectedModel] = useState<ModelOption>(
-    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-flash-preview') || MODEL_GROUPS[0].models[1]
+    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-pro-preview') || MODEL_GROUPS[0].models[0]
   )
   const [showHeader, setShowHeader] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
@@ -58,9 +61,13 @@ export default function Home() {
 
   useEffect(() => {
     messagesRef.current = messages
-    // Calculate total tokens for all messages
+    // Calculate total tokens and estimated spend for all messages.
     const total = messages.reduce((sum, msg) => sum + estimateTokenCount(msg.content), 0)
+    const inputCost = messages.reduce((sum, msg) => sum + (msg.usage?.inputCost || 0), 0)
+    const outputCost = messages.reduce((sum, msg) => sum + (msg.usage?.outputCost || 0), 0)
     setTotalTokens(total)
+    setTotalInputCost(inputCost)
+    setTotalOutputCost(outputCost)
   }, [messages])
 
   // Check if user is at bottom of scroll
@@ -204,20 +211,27 @@ export default function Home() {
 
     const requestId = ++requestIdCounterRef.current
     activeRequestIdRef.current = requestId
+    const inputContext = [...messagesRef.current, { role: 'user' as const, content: message, timestamp: new Date() }]
+      .map(msg => msg.content)
+      .join('\n\n')
+    const inputTokens = estimateTokenCount(inputContext)
+    const inputUsage = calculateUsageCost(selectedModel.id, inputTokens, 0)
 
     const userMessage: Message = {
       role: 'user',
       content: message,
-      timestamp: new Date()
+      timestamp: new Date(),
+      usage: inputUsage || undefined
     }
 
     const aiMessage: Message = {
       role: 'model',
       content: '',
-      timestamp: new Date()
+      timestamp: new Date(),
+      usage: inputUsage ? calculateUsageCost(selectedModel.id, 0, 0) || undefined : undefined
     }
 
-    const history = [...messagesRef.current, userMessage].map(msg => ({
+    const history = messagesRef.current.map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }]
     }))
@@ -364,9 +378,12 @@ export default function Home() {
                       : aiMessageIndex
 
                   if (updated[targetIndex]) {
+                    const outputContent = (updated[targetIndex].content || '') + data.text
+                    const outputTokens = estimateTokenCount(outputContent)
                     updated[targetIndex] = {
                       ...updated[targetIndex],
-                      content: (updated[targetIndex].content || '') + data.text
+                      content: outputContent,
+                      usage: calculateUsageCost(selectedModel.id, 0, outputTokens) || updated[targetIndex].usage
                     }
                   }
                   messagesRef.current = updated
@@ -569,11 +586,15 @@ export default function Home() {
 
                   {/* Token Counter */}
                   <div className="h-10 w-px bg-zinc-800"></div>
-                  <div className="flex flex-col items-end justify-center min-w-[120px]">
-                    <div className="text-xs font-medium text-zinc-400 mb-0.5">Tokens</div>
+                  <div className="flex flex-col items-end justify-center min-w-[150px]">
+                    <div className="text-xs font-medium text-zinc-400 mb-0.5">Usage</div>
                     <div className="flex items-baseline gap-1.5 justify-end">
                       <SlidingNumber value={totalTokens} className="text-xl font-bold text-blue-500 tabular-nums" />
-                      <span className="text-xs text-zinc-500 font-medium">total</span>
+                      <span className="text-xs text-zinc-500 font-medium">tokens</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-[11px] text-zinc-500 tabular-nums">
+                      <span>In {formatCost(totalInputCost)}</span>
+                      <span>Out {formatCost(totalOutputCost)}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -629,6 +650,10 @@ export default function Home() {
                         <div className="flex items-baseline gap-1">
                           <SlidingNumber value={totalTokens} className="text-xl font-bold text-blue-400 tabular-nums" />
                           <span className="text-xs text-zinc-500 font-medium">total</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500 tabular-nums">
+                          <span>Input {formatCost(totalInputCost)}</span>
+                          <span>Output {formatCost(totalOutputCost)}</span>
                         </div>
                       </div>
                     </div>

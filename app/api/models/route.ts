@@ -1,8 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export const dynamic = "force-dynamic";
+
+export async function GET() {
   try {
-    const response = await fetch("http://localhost:8000/api/models");
+    const modelsApiUrl = process.env.MODELS_API_URL;
+
+    if (!modelsApiUrl) {
+      return NextResponse.json(
+        { error: "MODELS_API_URL is not configured" },
+        { status: 503 },
+      );
+    }
+
+    const response = await fetch(modelsApiUrl, { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch models: ${response.statusText}`);
