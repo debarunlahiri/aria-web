@@ -24,7 +24,7 @@ export default function Home() {
   const [totalInputCost, setTotalInputCost] = useState(0)
   const [totalOutputCost, setTotalOutputCost] = useState(0)
   const [selectedModel, setSelectedModel] = useState<ModelOption>(
-    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-pro-preview') || MODEL_GROUPS[0].models[0]
+    MODEL_GROUPS[0].models.find(m => m.id === 'gemini-3-flash-preview') || MODEL_GROUPS[0].models[0]
   )
   const [showHeader, setShowHeader] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
@@ -517,8 +517,7 @@ export default function Home() {
     <div className="flex flex-col h-screen bg-black relative" ref={menuRef}>
       {/* Header with model selector and token counter */}
       <AnimatePresence>
-        {messages.length > 0 && (
-          <motion.div
+        <motion.div
             initial={{ y: -100, opacity: 0, height: 0 }}
             animate={{ 
               y: showHeader ? 0 : -100, 
@@ -600,8 +599,7 @@ export default function Home() {
                 </motion.div>
               </div>
             </div>
-          </motion.div>
-        )}
+        </motion.div>
       </AnimatePresence>
 
       {/* Hamburger Menu Dropdown */}
@@ -687,8 +685,7 @@ export default function Home() {
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-6 relative">
         {/* Header Toggle Button */}
-        {messages.length > 0 && (
-          <motion.button
+        <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
@@ -703,53 +700,9 @@ export default function Home() {
             ) : (
               <ChevronDown className="w-4 h-4 text-zinc-300 hover:text-white" />
             )}
-          </motion.button>
-        )}
+        </motion.button>
         
         <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
-          {messages.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-center mt-16 sm:mt-24 px-4"
-            >
-              <motion.h1
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, duration: 0.5, ease: 'easeOut' }}
-                className="text-5xl sm:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 mb-8 sm:mb-10"
-              >
-                Aria
-              </motion.h1>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-                className="flex justify-center mb-8"
-              >
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-zinc-900/80 backdrop-blur-sm rounded-2xl p-6 border border-zinc-800 shadow-2xl"
-                >
-                  <p className="text-xs text-zinc-400 mb-3 uppercase tracking-wider font-semibold">Select Model</p>
-                  <ModelSelector 
-                    selectedModel={selectedModel} 
-                    onModelChange={setSelectedModel}
-                  />
-                </motion.div>
-              </motion.div>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7, duration: 0.5 }}
-                className="text-zinc-500 text-sm sm:text-base max-w-md mx-auto"
-              >
-                Start a conversation by typing a message below
-              </motion.p>
-            </motion.div>
-          )}
-          
           {messages.map((message, index) => (
             <ChatMessage key={index} message={message} />
           ))}
